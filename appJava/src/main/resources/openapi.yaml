@@ -1,0 +1,159 @@
+openapi: 3.0.3
+info:
+  title: DevOps Info Service (Java)
+  version: 1.0.0
+  description: DevOps course info service implemented in Java/Spring Boot.
+tags:
+  - name: DevopsSystemInfo
+    description: System and app info
+paths:
+  /:
+    get:
+      operationId: getInfo
+      summary: Service and system information
+      tags:
+        - DevopsSystemInfo
+      responses:
+        "200":
+          description: Successful response with service info.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RootResponse"
+  /health:
+    get:
+      operationId: getHealth
+      summary: Health check endpoint
+      tags:
+        - DevopsSystemInfo
+      responses:
+        "200":
+          description: Health status with uptime.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+components:
+  schemas:
+    ServiceInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+        framework:
+          type: string
+      required:
+        - name
+        - version
+        - description
+        - framework
+    SystemInfo:
+      type: object
+      properties:
+        hostname:
+          type: string
+        platform:
+          type: string
+        platform_version:
+          type: string
+        architecture:
+          type: string
+        cpu_count:
+          type: integer
+          format: int32
+        python_version:
+          type: string
+      required:
+        - hostname
+        - platform
+        - platform_version
+        - architecture
+        - cpu_count
+        - python_version
+    RuntimeInfo:
+      type: object
+      properties:
+        uptime_seconds:
+          type: integer
+          format: int64
+        uptime_human:
+          type: string
+        current_time:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+      required:
+        - uptime_seconds
+        - uptime_human
+        - current_time
+        - timezone
+    RequestInfo:
+      type: object
+      properties:
+        client_ip:
+          type: string
+        user_agent:
+          type: string
+        method:
+          type: string
+        path:
+          type: string
+      required:
+        - client_ip
+        - user_agent
+        - method
+        - path
+    EndpointInfo:
+      type: object
+      properties:
+        path:
+          type: string
+        method:
+          type: string
+        description:
+          type: string
+      required:
+        - path
+        - method
+        - description
+    RootResponse:
+      type: object
+      properties:
+        service:
+          $ref: "#/components/schemas/ServiceInfo"
+        system:
+          $ref: "#/components/schemas/SystemInfo"
+        runtime:
+          $ref: "#/components/schemas/RuntimeInfo"
+        request:
+          $ref: "#/components/schemas/RequestInfo"
+        endpoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/EndpointInfo"
+      required:
+        - service
+        - system
+        - runtime
+        - request
+        - endpoints
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        uptime_seconds:
+          type: integer
+          format: int64
+      required:
+        - status
+        - timestamp
+        - uptime_seconds

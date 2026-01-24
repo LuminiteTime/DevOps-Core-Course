@@ -1,0 +1,70 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.2'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.openapi.generator' version '7.8.0'
+}
+
+group = 'luminais.tech'
+version = '0.0.1-SNAPSHOT'
+description = 'appJava'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+springBoot {
+    mainClass.set('luminais.tech.appjava.AppJavaApplication')
+}
+
+openApiGenerate {
+    generatorName = 'spring'
+    inputSpec = "$rootDir/src/main/resources/openapi.yaml"
+    outputDir = "$buildDir/generated" 
+    apiPackage = 'luminais.tech.appjava.api'
+    modelPackage = 'luminais.tech.appjava.model'
+    configOptions = [
+        useSpringBoot3 : 'true',
+        delegatePattern: 'true',
+        interfaceOnly : 'false',
+        useTags       : 'true',
+        dateLibrary   : 'java8'
+    ]
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "$buildDir/generated/src/main/java"
+        }
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn tasks.named('openApiGenerate')
+}
+
+tasks.named('openApiGenerate') {
+    doFirst {
+        delete("$buildDir/generated")
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
