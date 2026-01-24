@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: devops-info-service-java
+
+server:
+  port: ${PORT:8081}
+  address: ${HOST:0.0.0.0}
+
+devops:
+  service:
+    name: devops-info-service
+    version: 1.0.0
+    description: DevOps course info service (Java implementation)
+    framework: Spring Boot
+  endpoints:
+    - path: "/"
+      method: GET
+      description: "Service information"
+    - path: "/health"
+      method: GET
+      description: "Health check"
