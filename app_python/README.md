@@ -52,6 +52,35 @@ curl http://localhost:8080/
 curl http://localhost:8080/health
 ```
 
+## Docker
+
+### Build (local)
+
+```bash
+cd app_python
+docker build -t <local-tag> .
+```
+
+### Run
+
+```bash
+docker run --rm --name <container-name> -p <host-port>:8080 <local-tag>
+```
+
+Test endpoints:
+
+```bash
+curl http://localhost:<host-port>/
+curl http://localhost:<host-port>/health
+```
+
+### Pull from Docker Hub
+
+```bash
+docker pull <dockerhub-username>/<repo>:<tag>
+docker run --rm -p <host-port>:8080 <dockerhub-username>/<repo>:<tag>
+```
+
 ## API Endpoints
 
 - `GET /`

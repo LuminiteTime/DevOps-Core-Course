@@ -1,0 +1,16 @@
+.git/
+.gitignore
+
+.gradle/
+build/
+out/
+bin/
+
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+docs/
+screenshots/
+HELP.md
