@@ -6,11 +6,18 @@ __pycache__/
 # Virtual environments
 venv/
 .venv/
+.venv-ci/
 .env/
 .env
 
 # Logs
 *.log
+
+# Test / coverage artifacts
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
 
 # IDE configuration
 .vscode/
