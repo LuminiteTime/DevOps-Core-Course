@@ -1,5 +1,8 @@
 # DevOps Info Service (Python / FastAPI)
 
+[![Python CI](https://github.com/LuminiteTime/DevOps-Core-Course/actions/workflows/python-ci.yml/badge.svg?branch=master)](https://github.com/LuminiteTime/DevOps-Core-Course/actions/workflows/python-ci.yml)
+[![Coverage](https://codecov.io/gh/LuminiteTime/DevOps-Core-Course/branch/master/graph/badge.svg)](https://codecov.io/gh/LuminiteTime/DevOps-Core-Course)
+
 ## Overview
 
 This service exposes a small HTTP API that reports information about the running host, the Python runtime, and the incoming request. It is used as a base for later DevOps labs.
@@ -79,6 +82,20 @@ curl http://localhost:<host-port>/health
 ```bash
 docker pull <dockerhub-username>/<repo>:<tag>
 docker run --rm -p <host-port>:8080 <dockerhub-username>/<repo>:<tag>
+```
+
+## Testing
+
+Install dev dependencies and run tests:
+
+```bash
+cd app_python
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+
+ruff check .
+pytest
 ```
 
 ## API Endpoints
