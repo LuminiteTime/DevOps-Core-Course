@@ -1,7 +1,8 @@
 # DevOps Info Service (Python / FastAPI)
 
-[![Python CI](https://github.com/LuminiteTime/DevOps-Core-Course/actions/workflows/python-ci.yml/badge.svg?branch=master)](https://github.com/LuminiteTime/DevOps-Core-Course/actions/workflows/python-ci.yml)
-[![Coverage](https://codecov.io/gh/LuminiteTime/DevOps-Core-Course/branch/master/graph/badge.svg)](https://codecov.io/gh/LuminiteTime/DevOps-Core-Course)
+[![Python CI](https://github.com/LuminiteTime/DevOps-Core-Course/actions/workflows/python-ci.yml/badge.svg?branch=lab3)](https://github.com/LuminiteTime/DevOps-Core-Course/actions/workflows/python-ci.yml)
+[![Java CI](https://github.com/LuminiteTime/DevOps-Core-Course/actions/workflows/java-ci.yml/badge.svg?branch=lab3)](https://github.com/LuminiteTime/DevOps-Core-Course/actions/workflows/java-ci.yml)
+[![Coverage](https://codecov.io/gh/LuminiteTime/DevOps-Core-Course/branch/lab3/graph/badge.svg)](https://codecov.io/gh/LuminiteTime/DevOps-Core-Course)
 
 ## Overview
 
