@@ -1,0 +1,7 @@
+name: lab04-pulumi
+description: Lab04 Yandex Cloud VM
+runtime: python
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: python

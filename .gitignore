@@ -1,2 +1,17 @@
 .idea
 .vscode
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+*.tfvars
+crash.log
+
+# Pulumi
+pulumi/venv/
+pulumi/.pulumi-state/
+pulumi/__pycache__/
+Pulumi.*.yaml
