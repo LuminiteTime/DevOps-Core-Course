@@ -15,3 +15,8 @@ pulumi/venv/
 pulumi/.pulumi-state/
 pulumi/__pycache__/
 Pulumi.*.yaml
+
+# Ansible
+*.retry
+.vault_pass
+__pycache__/
