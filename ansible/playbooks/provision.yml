@@ -4,7 +4,5 @@
   become: true
 
   roles:
-    - role: common
-      tags: [common]
-    - role: docker
-      tags: [docker]
+    - common
+    - docker

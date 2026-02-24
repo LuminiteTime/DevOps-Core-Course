@@ -4,4 +4,4 @@
   become: true
 
   roles:
-    - web_app
+    - app_deploy
