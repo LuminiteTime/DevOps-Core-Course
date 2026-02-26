@@ -1,0 +1,10 @@
+---
+app_name: devops-app
+docker_image: "luminitetime/devops-info-service-python"
+docker_tag: latest
+app_port: 5000
+app_internal_port: 8080
+compose_project_dir: "/opt/{{ app_name }}"
+app_restart_policy: unless-stopped
+
+web_app_wipe: false
