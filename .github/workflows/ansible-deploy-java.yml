@@ -1,0 +1,75 @@
+name: Ansible Deploy Java
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'ansible/vars/app_java.yml'
+      - 'ansible/playbooks/deploy_java.yml'
+      - 'ansible/roles/web_app/**'
+      - '.github/workflows/ansible-deploy-java.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'ansible/**'
+      - '!ansible/docs/**'
+      - '.github/workflows/ansible-deploy-java.yml'
+
+jobs:
+  lint:
+    name: Ansible Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install ansible ansible-lint
+
+      - name: Run ansible-lint
+        run: ansible-lint playbooks/*.yml
+        working-directory: ansible
+
+  deploy:
+    name: Deploy Java App
+    needs: lint
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Create vault password file
+        run: echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > /tmp/vault_pass
+
+      - name: Run Ansible playbook
+        run: |
+          ansible-playbook playbooks/deploy_java.yml \
+            -i inventory/hosts.ini \
+            --vault-password-file /tmp/vault_pass
+        working-directory: ansible
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          curl -f http://${{ secrets.VM_HOST }}:5001/health
+
+      - name: Cleanup
+        if: always()
+        run: rm -f /tmp/vault_pass

@@ -1,0 +1,9 @@
+---
+- name: Deploy Java application
+  hosts: webservers
+  become: true
+  vars_files:
+    - ../vars/app_java.yml
+
+  roles:
+    - web_app
