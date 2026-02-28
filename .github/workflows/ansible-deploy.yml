@@ -30,6 +30,10 @@ jobs:
       - name: Install dependencies
         run: pip install ansible ansible-lint
 
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install -r requirements.yml
+        working-directory: ansible
+
       - name: Create dummy vault password for lint
         run: echo "dummy" > ansible/.vault_pass
 

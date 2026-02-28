@@ -1,5 +1,8 @@
 ---
 - name: Install Docker engine
+  become: true
+  tags:
+    - docker_install
   block:
     - name: Install prerequisite packages
       ansible.builtin.apt:
@@ -59,11 +62,10 @@
         state: started
         enabled: true
 
+- name: Configure Docker access
   become: true
   tags:
-    - docker_install
-
-- name: Configure Docker access
+    - docker_config
   block:
     - name: Add user to docker group
       ansible.builtin.user:
@@ -75,7 +77,3 @@
       ansible.builtin.apt:
         name: python3-docker
         state: present
-
-  become: true
-  tags:
-    - docker_config
