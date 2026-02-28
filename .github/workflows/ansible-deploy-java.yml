@@ -29,9 +29,16 @@ jobs:
       - name: Install dependencies
         run: pip install ansible ansible-lint
 
+      - name: Create dummy vault password for lint
+        run: echo "dummy" > ansible/.vault_pass
+
       - name: Run ansible-lint
         run: ansible-lint playbooks/*.yml
         working-directory: ansible
+
+      - name: Cleanup dummy vault pass
+        if: always()
+        run: rm -f ansible/.vault_pass
 
   deploy:
     name: Deploy Java App
