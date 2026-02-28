@@ -1,7 +1,7 @@
 ---
-app_name: devops-java
-docker_image: luminitetime/devops-info-service-java
-docker_tag: latest
-app_port: 5001
-app_internal_port: 8081
-compose_project_dir: "/opt/{{ app_name }}"
+web_app_name: devops-java
+web_app_image: luminitetime/devops-info-service-java
+web_app_tag: latest
+web_app_port: 5001
+web_app_internal_port: 8081
+web_app_project_dir: "/opt/{{ web_app_name }}"

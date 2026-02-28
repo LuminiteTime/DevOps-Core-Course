@@ -1,7 +1,7 @@
 ---
-app_name: devops-python
-docker_image: luminitetime/devops-info-service-python
-docker_tag: latest
-app_port: 5000
-app_internal_port: 8080
-compose_project_dir: "/opt/{{ app_name }}"
+web_app_name: devops-python
+web_app_image: luminitetime/devops-info-service-python
+web_app_tag: latest
+web_app_port: 5000
+web_app_internal_port: 8080
+web_app_project_dir: "/opt/{{ web_app_name }}"

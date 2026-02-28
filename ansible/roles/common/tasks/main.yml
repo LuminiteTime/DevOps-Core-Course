@@ -1,5 +1,8 @@
 ---
 - name: Install system packages
+  become: true
+  tags:
+    - packages
   block:
     - name: Update apt cache
       ansible.builtin.apt:
@@ -13,8 +16,9 @@
 
   rescue:
     - name: Fix apt and retry
-      ansible.builtin.command: apt-get update --fix-missing
-      changed_when: true
+      ansible.builtin.apt:
+        update_cache: true
+        force: true
 
     - name: Retry package installation
       ansible.builtin.apt:
@@ -28,12 +32,8 @@
         dest: /tmp/ansible_common_done
         mode: "0644"
 
-  become: true
-  tags:
-    - packages
-
 - name: Set timezone
-  ansible.builtin.timezone:
+  community.general.timezone:
     name: "{{ common_timezone }}"
   become: true
   tags:
