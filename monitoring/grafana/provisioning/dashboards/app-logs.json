@@ -87,7 +87,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "" },
-          "expr": "{app=~\"devops-.*\"} |= \"ERROR\" or {app=~\"devops-.*\"} |= \"error\"",
+          "expr": "{app=~\"devops-.*\"} |~ \"(?i)(error|warning)\"",
           "refId": "A"
         }
       ],
