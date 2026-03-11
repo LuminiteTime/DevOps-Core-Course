@@ -62,18 +62,32 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          cat <<'EOF' > ~/.ssh/id_ed25519
+          ${{ secrets.SSH_PRIVATE_KEY }}
+          EOF
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Create vault password file
-        run: echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > /tmp/vault_pass
+        run: |
+          cat <<'EOF' > ansible/.vault_pass
+          ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+          EOF
+          chmod 600 ansible/.vault_pass
+
+      - name: Verify SSH access
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            yc-user@${{ secrets.VM_HOST }} true
 
       - name: Run Ansible playbook
         run: |
           ansible-playbook playbooks/deploy_java.yml \
             -i inventory/hosts.ini \
-            --vault-password-file /tmp/vault_pass
+            -e "ansible_host=${{ secrets.VM_HOST }}" \
+            -e "ansible_ssh_private_key_file=/home/runner/.ssh/id_ed25519"
         working-directory: ansible
 
       - name: Verify deployment
@@ -83,4 +97,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: rm -f /tmp/vault_pass
+        run: rm -f ansible/.vault_pass
