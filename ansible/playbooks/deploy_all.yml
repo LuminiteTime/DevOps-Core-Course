@@ -1,0 +1,23 @@
+---
+- name: Deploy all applications
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Deploy Python app
+      ansible.builtin.include_role:
+        name: web_app
+      vars:
+        web_app_name: devops-python
+        web_app_image: luminitetime/devops-info-service-python
+        web_app_port: 5000
+        web_app_internal_port: 8080
+
+    - name: Deploy Java app
+      ansible.builtin.include_role:
+        name: web_app
+      vars:
+        web_app_name: devops-java
+        web_app_image: luminitetime/devops-info-service-java
+        web_app_port: 5001
+        web_app_internal_port: 8081

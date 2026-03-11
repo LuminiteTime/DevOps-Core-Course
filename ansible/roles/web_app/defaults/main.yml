@@ -1,0 +1,10 @@
+---
+web_app_name: devops-app
+web_app_image: "luminitetime/devops-info-service-python"
+web_app_tag: latest
+web_app_port: 5000
+web_app_internal_port: 8080
+web_app_project_dir: "/opt/{{ web_app_name }}"
+web_app_restart_policy: unless-stopped
+
+web_app_wipe: false
