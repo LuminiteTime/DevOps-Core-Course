@@ -165,10 +165,10 @@ Displays logs-per-second for each app as separate time series lines, useful for 
 ### Panel 3 -- Error Logs (Logs visualization)
 
 ```logql
-{app=~"devops-.*"} |= "ERROR" or {app=~"devops-.*"} |= "error"
+{app=~"devops-.*"} |~ "(?i)(error|warning)"
 ```
 
-Filters for error-level log lines only. Catches both uppercase (Python JSON formatter) and lowercase (Java/Spring) patterns.
+Filters lines that contain `error` or `warning` in a case-insensitive way. This works across both the Python app and Java app logs without relying on identical JSON fields.
 
 ### Panel 4 -- Log Level Distribution (Stat)
 
