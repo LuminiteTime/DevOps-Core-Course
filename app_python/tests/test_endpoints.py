@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from app_python import app as app_module
 from app_python.app import app
 
 
@@ -60,3 +61,24 @@ def test_unknown_endpoint_returns_structured_404() -> None:
 def test_method_not_allowed_returns_405() -> None:
     res = client.post("/health")
     assert res.status_code == 405
+
+
+def test_main_runs_uvicorn_with_expected_options(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run(*args, **kwargs) -> None:
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(app_module.uvicorn, "run", fake_run)
+
+    app_module.main()
+
+    assert captured["args"] == ("app:app",)
+    assert captured["kwargs"] == {
+        "host": app_module.HOST,
+        "port": app_module.PORT,
+        "reload": app_module.DEBUG,
+        "log_config": None,
+        "access_log": False,
+    }
