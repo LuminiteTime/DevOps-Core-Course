@@ -6,16 +6,19 @@ For now it is all contained in a single file for simplicity, but is planned to b
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import platform
 import socket
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pythonjsonlogger.json import JsonFormatter
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import uvicorn
 
@@ -29,11 +32,52 @@ APP_NAME: str = "devops-info-service"
 APP_DESCRIPTION: str = "DevOps course info service"
 APP_FRAMEWORK: str = "FastAPI"
 
-logging.basicConfig(
-    level=logging.DEBUG if DEBUG else logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(APP_NAME)
+
+class _AppJsonFormatter(JsonFormatter):
+    """Custom JSON formatter that adds service context to every log record."""
+
+    def add_fields(
+        self,
+        log_record: dict[str, Any],
+        record: logging.LogRecord,
+        message_dict: dict[str, Any],
+    ) -> None:
+        super().add_fields(log_record, record, message_dict)
+        log_record["timestamp"] = datetime.now(timezone.utc).isoformat()
+        log_record["level"] = record.levelname
+        log_record["service"] = APP_NAME
+        log_record.pop("taskName", None)
+
+
+def _setup_logging() -> logging.Logger:
+    """Configure root and application loggers with JSON output.
+
+    Also patches uvicorn loggers so all output is JSON-formatted.
+    """
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        _AppJsonFormatter(
+            "%(timestamp)s %(level)s %(name)s %(message)s",
+        )
+    )
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.addHandler(handler)
+    root.setLevel(logging.DEBUG if DEBUG else logging.INFO)
+
+    for name in ("uvicorn", "uvicorn.error"):
+        uv_logger = logging.getLogger(name)
+        uv_logger.handlers.clear()
+        uv_logger.propagate = True
+
+    access_logger = logging.getLogger("uvicorn.access")
+    access_logger.handlers.clear()
+    access_logger.propagate = False
+
+    return logging.getLogger(APP_NAME)
+
+
+logger = _setup_logging()
 
 # Application start time
 START_TIME: datetime = datetime.now(timezone.utc)
@@ -114,6 +158,29 @@ app: FastAPI = FastAPI(
 )
 
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next) -> Response:
+    """Log every request with structured fields for LogQL extraction."""
+    client_ip = request.client.host if request.client else "unknown"
+    start = time.monotonic()
+    response = await call_next(request)
+    duration_ms = round((time.monotonic() - start) * 1000, 2)
+    logger.info(
+        "%s %s %s",
+        request.method,
+        request.url.path,
+        response.status_code,
+        extra={
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+            "client_ip": client_ip,
+            "duration_ms": duration_ms,
+        },
+    )
+    return response
+
+
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(
         request: Request, exc: StarletteHTTPException
@@ -176,12 +243,6 @@ async def unhandled_exception_handler(
 async def index(request: Request) -> Dict[str, Any]:
     """Main endpoint returning service information."""
 
-    logger.info("Handling request on %s %s from %s",
-                request.method,
-                request.url.path,
-                request.client.host if request.client else "unknown"
-                )
-
     response: Dict[str, Any] = {
         "service": {
             "name": APP_NAME,
@@ -218,7 +279,14 @@ def main() -> None:
         PORT,
         DEBUG,
     )
-    uvicorn.run("app:app", host=HOST, port=PORT, reload=DEBUG)
+    uvicorn.run(
+        "app:app",
+        host=HOST,
+        port=PORT,
+        reload=DEBUG,
+        log_config=None,
+        access_log=False,
+    )
 
 
 if __name__ == "__main__":
