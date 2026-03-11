@@ -6,7 +6,6 @@ For now it is all contained in a single file for simplicity, but is planned to b
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 import platform
