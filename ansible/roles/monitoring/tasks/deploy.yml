@@ -1,0 +1,44 @@
+---
+- name: Pull and start monitoring stack
+  ansible.builtin.command:
+    cmd: docker compose up -d --pull always
+    chdir: "{{ monitoring_dir }}"
+  register: monitoring_compose_result
+  changed_when: >
+    'Started' in monitoring_compose_result.stderr or
+    'Created' in monitoring_compose_result.stderr or
+    'Pulling' in monitoring_compose_result.stderr
+
+- name: Wait for Loki to be ready
+  ansible.builtin.uri:
+    url: "http://localhost:{{ monitoring_loki_port }}/ready"
+    return_content: true
+  register: monitoring_loki_ready
+  until: monitoring_loki_ready.status == 200
+  retries: 15
+  delay: 5
+
+- name: Wait for Prometheus to be ready
+  ansible.builtin.uri:
+    url: "http://localhost:{{ monitoring_prometheus_port }}/-/healthy"
+    return_content: true
+  register: monitoring_prometheus_ready
+  until: monitoring_prometheus_ready.status == 200
+  retries: 15
+  delay: 5
+
+- name: Wait for Grafana to be ready
+  ansible.builtin.uri:
+    url: "http://localhost:{{ monitoring_grafana_port }}/api/health"
+    return_content: true
+  register: monitoring_grafana_ready
+  until: monitoring_grafana_ready.status == 200
+  retries: 15
+  delay: 5
+
+- name: Show monitoring stack status
+  ansible.builtin.debug:
+    msg: >-
+      Prometheus: {{ monitoring_prometheus_ready.content | default('unknown') }} |
+      Loki: {{ monitoring_loki_ready.content | default('unknown') }} |
+      Grafana: {{ monitoring_grafana_ready.json | default('unknown') }}
