@@ -1,0 +1,74 @@
+---
+- name: Create monitoring directory structure
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ monitoring_dir }}"
+    - "{{ monitoring_dir }}/loki"
+    - "{{ monitoring_dir }}/prometheus"
+    - "{{ monitoring_dir }}/promtail"
+    - "{{ monitoring_dir }}/grafana/provisioning/datasources"
+    - "{{ monitoring_dir }}/grafana/provisioning/dashboards"
+
+- name: Template Loki configuration
+  ansible.builtin.template:
+    src: loki-config.yml.j2
+    dest: "{{ monitoring_dir }}/loki/config.yml"
+    mode: "0644"
+  register: monitoring_loki_config
+
+- name: Template Promtail configuration
+  ansible.builtin.template:
+    src: promtail-config.yml.j2
+    dest: "{{ monitoring_dir }}/promtail/config.yml"
+    mode: "0644"
+  register: monitoring_promtail_config
+
+- name: Template Prometheus configuration
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: "{{ monitoring_dir }}/prometheus/prometheus.yml"
+    mode: "0644"
+  register: monitoring_prometheus_config
+
+- name: Template Grafana datasource provisioning
+  ansible.builtin.template:
+    src: loki-datasource.yml.j2
+    dest: "{{ monitoring_dir }}/grafana/provisioning/datasources/loki.yml"
+    mode: "0644"
+  register: monitoring_grafana_ds_config
+
+- name: Template Prometheus datasource provisioning
+  ansible.builtin.template:
+    src: prometheus-datasource.yml.j2
+    dest: "{{ monitoring_dir }}/grafana/provisioning/datasources/prometheus.yml"
+    mode: "0644"
+  register: monitoring_grafana_prometheus_ds_config
+
+- name: Template Grafana dashboard provider
+  ansible.builtin.template:
+    src: grafana-dashboard-provider.yml.j2
+    dest: "{{ monitoring_dir }}/grafana/provisioning/dashboards/provider.yml"
+    mode: "0644"
+  register: monitoring_grafana_dashboard_provider
+
+- name: Copy Grafana logs dashboard
+  ansible.builtin.copy:
+    src: grafana-app-logs-dashboard.json
+    dest: "{{ monitoring_dir }}/grafana/provisioning/dashboards/app-logs.json"
+    mode: "0644"
+
+- name: Copy Grafana metrics dashboard
+  ansible.builtin.copy:
+    src: grafana-app-metrics-dashboard.json
+    dest: "{{ monitoring_dir }}/grafana/provisioning/dashboards/app-metrics.json"
+    mode: "0644"
+
+- name: Template Docker Compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ monitoring_dir }}/docker-compose.yml"
+    mode: "0644"
+  register: monitoring_compose_config

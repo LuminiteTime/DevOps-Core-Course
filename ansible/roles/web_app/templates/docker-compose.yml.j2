@@ -4,4 +4,7 @@ services:
     container_name: {{ web_app_name }}
     ports:
       - "{{ web_app_port }}:{{ web_app_internal_port }}"
+    labels:
+      logging: "promtail"
+      app: "{{ web_app_name }}"
     restart: {{ web_app_restart_policy }}

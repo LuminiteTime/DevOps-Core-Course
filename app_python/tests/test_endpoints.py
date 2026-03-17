@@ -1,3 +1,5 @@
+import re
+
 from fastapi.testclient import TestClient
 
 from app_python import app as app_module
@@ -38,7 +40,7 @@ def test_get_root_returns_expected_structure() -> None:
     endpoints = data["endpoints"]
     assert isinstance(endpoints, list) and endpoints
     paths = {e["path"] for e in endpoints}
-    assert paths == {"/", "/health"}
+    assert paths == {"/", "/health", "/metrics"}
 
 
 def test_get_health_returns_expected_structure() -> None:
@@ -63,6 +65,26 @@ def test_method_not_allowed_returns_405() -> None:
     assert res.status_code == 405
 
 
+def test_metrics_endpoint_exposes_prometheus_metrics() -> None:
+    client.get("/")
+    client.get("/health")
+
+    res = client.get("/metrics")
+    assert res.status_code == 200
+    assert res.headers["content-type"].startswith("text/plain")
+    body = res.text
+
+    assert "# HELP http_requests_total" in body
+    assert "# TYPE http_request_duration_seconds histogram" in body
+    assert "# TYPE http_requests_in_progress gauge" in body
+    assert "devops_info_endpoint_calls_total" in body
+    assert "devops_info_system_collection_seconds_bucket" in body
+    assert re.search(
+        r'http_requests_total\{[^}]*endpoint="/health"[^}]*method="GET"[^}]*status_code="200"[^}]*\}',
+        body,
+    )
+
+
 def test_main_runs_uvicorn_with_expected_options(monkeypatch) -> None:
     captured: dict[str, object] = {}
 
@@ -74,7 +96,7 @@ def test_main_runs_uvicorn_with_expected_options(monkeypatch) -> None:
 
     app_module.main()
 
-    assert captured["args"] == ("app:app",)
+    assert captured["args"] == (app_module.app,)
     assert captured["kwargs"] == {
         "host": app_module.HOST,
         "port": app_module.PORT,
