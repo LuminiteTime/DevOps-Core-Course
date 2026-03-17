@@ -17,6 +17,13 @@ from typing import Any, Dict, List
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+)
 from pythonjsonlogger.json import JsonFormatter
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import uvicorn
@@ -30,6 +37,33 @@ APP_VERSION: str = "1.0.0"
 APP_NAME: str = "devops-info-service"
 APP_DESCRIPTION: str = "DevOps course info service"
 APP_FRAMEWORK: str = "FastAPI"
+
+KNOWN_ENDPOINTS: set[str] = {"/", "/health", "/metrics"}
+
+HTTP_REQUESTS_TOTAL = Counter(
+    "http_requests_total",
+    "Total HTTP requests handled by the service",
+    ["method", "endpoint", "status_code"],
+)
+HTTP_REQUEST_DURATION_SECONDS = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request duration in seconds",
+    ["method", "endpoint", "status_code"],
+)
+HTTP_REQUESTS_IN_PROGRESS = Gauge(
+    "http_requests_in_progress",
+    "HTTP requests currently being processed",
+    ["method", "endpoint"],
+)
+DEVOPS_INFO_ENDPOINT_CALLS = Counter(
+    "devops_info_endpoint_calls",
+    "Application endpoint usage",
+    ["endpoint"],
+)
+DEVOPS_INFO_SYSTEM_COLLECTION_SECONDS = Histogram(
+    "devops_info_system_collection_seconds",
+    "Time spent collecting system information",
+)
 
 
 class _AppJsonFormatter(JsonFormatter):
@@ -147,7 +181,18 @@ def get_endpoints() -> List[Dict[str, str]]:
             "method": "GET",
             "description": "Health check",
         },
+        {
+            "path": "/metrics",
+            "method": "GET",
+            "description": "Prometheus metrics",
+        },
     ]
+
+
+def normalize_endpoint_label(path: str) -> str:
+    """Keep endpoint labels low-cardinality for Prometheus."""
+
+    return path if path in KNOWN_ENDPOINTS else "unmatched"
 
 
 app: FastAPI = FastAPI(
@@ -159,11 +204,31 @@ app: FastAPI = FastAPI(
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next) -> Response:
-    """Log every request with structured fields for LogQL extraction."""
+    """Log every request and emit Prometheus RED metrics."""
     client_ip = request.client.host if request.client else "unknown"
+    endpoint = normalize_endpoint_label(request.url.path)
+    in_progress = HTTP_REQUESTS_IN_PROGRESS.labels(request.method, endpoint)
     start = time.monotonic()
-    response = await call_next(request)
-    duration_ms = round((time.monotonic() - start) * 1000, 2)
+    in_progress.inc()
+    try:
+        response = await call_next(request)
+    except Exception:
+        duration_seconds = time.monotonic() - start
+        HTTP_REQUESTS_TOTAL.labels(request.method, endpoint, "500").inc()
+        HTTP_REQUEST_DURATION_SECONDS.labels(
+            request.method, endpoint, "500"
+        ).observe(duration_seconds)
+        in_progress.dec()
+        raise
+
+    duration_seconds = time.monotonic() - start
+    duration_ms = round(duration_seconds * 1000, 2)
+    status_code = str(response.status_code)
+    HTTP_REQUESTS_TOTAL.labels(request.method, endpoint, status_code).inc()
+    HTTP_REQUEST_DURATION_SECONDS.labels(
+        request.method, endpoint, status_code
+    ).observe(duration_seconds)
+    in_progress.dec()
     logger.info(
         "%s %s %s",
         request.method,
@@ -242,6 +307,10 @@ async def unhandled_exception_handler(
 async def index(request: Request) -> Dict[str, Any]:
     """Main endpoint returning service information."""
 
+    DEVOPS_INFO_ENDPOINT_CALLS.labels("/").inc()
+    with DEVOPS_INFO_SYSTEM_COLLECTION_SECONDS.time():
+        system_info = get_system_info()
+
     response: Dict[str, Any] = {
         "service": {
             "name": APP_NAME,
@@ -249,7 +318,7 @@ async def index(request: Request) -> Dict[str, Any]:
             "description": APP_DESCRIPTION,
             "framework": APP_FRAMEWORK,
         },
-        "system": get_system_info(),
+        "system": system_info,
         "runtime": get_runtime_info(),
         "request": get_request_info(request),
         "endpoints": get_endpoints(),
@@ -261,12 +330,21 @@ async def index(request: Request) -> Dict[str, Any]:
 async def health() -> Dict[str, Any]:
     """Health check endpoint returning service status and uptime seconds."""
 
+    DEVOPS_INFO_ENDPOINT_CALLS.labels("/health").inc()
     uptime = get_uptime()
     return {
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "uptime_seconds": uptime["uptime_seconds"],
     }
+
+
+@app.get("/metrics")
+async def metrics() -> Response:
+    """Expose Prometheus metrics for scraping."""
+
+    DEVOPS_INFO_ENDPOINT_CALLS.labels("/metrics").inc()
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 def main() -> None:
@@ -279,7 +357,7 @@ def main() -> None:
         DEBUG,
     )
     uvicorn.run(
-        "app:app",
+        app,
         host=HOST,
         port=PORT,
         reload=DEBUG,

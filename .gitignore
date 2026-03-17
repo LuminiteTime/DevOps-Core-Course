@@ -19,7 +19,7 @@ Pulumi.*.yaml
 
 # Ansible
 .ansible/
-ansible/
+ansible/collections/
 *.retry
 .vault_pass
 __pycache__/

@@ -15,6 +15,10 @@ FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN addgroup --system app && adduser --system --ingroup app app
 
 COPY --from=builder /workspace/build/libs/appJava-0.0.1-SNAPSHOT.jar /app/app.jar

@@ -3,8 +3,7 @@ apiVersion: 1
 datasources:
   - name: Loki
     type: loki
-    uid: loki
     access: proxy
-    url: http://loki:3100
-    isDefault: false
+    url: http://loki:{{ monitoring_loki_port }}
+    isDefault: true
     editable: true
