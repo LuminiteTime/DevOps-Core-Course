@@ -33,10 +33,13 @@ HOST: str = os.getenv("HOST", "0.0.0.0")
 PORT: int = int(os.getenv("PORT", "8080"))
 DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
 
-APP_VERSION: str = "1.0.0"
-APP_NAME: str = "devops-info-service"
-APP_DESCRIPTION: str = "DevOps course info service"
-APP_FRAMEWORK: str = "FastAPI"
+APP_VERSION: str = os.getenv("APP_VERSION", "1.0.0")
+APP_NAME: str = os.getenv("APP_NAME", "devops-info-service")
+APP_DESCRIPTION: str = os.getenv(
+    "APP_DESCRIPTION", "DevOps course info service"
+)
+APP_FRAMEWORK: str = os.getenv("APP_FRAMEWORK", "FastAPI")
+APP_VARIANT: str = os.getenv("APP_VARIANT", "default")
 
 KNOWN_ENDPOINTS: set[str] = {"/", "/health", "/metrics"}
 
@@ -151,6 +154,9 @@ def get_runtime_info() -> Dict[str, Any]:
         "uptime_human": uptime["uptime_human"],
         "current_time": datetime.now(timezone.utc).isoformat(),
         "timezone": "UTC",
+        "pod_name": os.getenv("POD_NAME", socket.gethostname()),
+        "node_name": os.getenv("NODE_NAME", "unknown"),
+        "namespace": os.getenv("POD_NAMESPACE", "default"),
     }
 
 
@@ -317,6 +323,7 @@ async def index(request: Request) -> Dict[str, Any]:
             "version": APP_VERSION,
             "description": APP_DESCRIPTION,
             "framework": APP_FRAMEWORK,
+            "variant": APP_VARIANT,
         },
         "system": system_info,
         "runtime": get_runtime_info(),
