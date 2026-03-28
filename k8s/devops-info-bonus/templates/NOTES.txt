@@ -1,0 +1,6 @@
+DevOps Info Bonus has been deployed!
+
+Release:   {{ .Release.Name }}
+Chart:     {{ .Chart.Name }}-{{ .Chart.Version }}
+App:       {{ .Chart.AppVersion }}
+Namespace: {{ .Release.Namespace }}
