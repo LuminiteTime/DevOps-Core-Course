@@ -1,0 +1,17 @@
+apiVersion: v2
+name: devops-info-bonus
+description: Helm chart for the second DevOps Info application (bonus)
+type: application
+version: 0.1.0
+appVersion: "2.0.0"
+keywords:
+  - python
+  - fastapi
+  - devops
+  - bonus
+maintainers:
+  - name: luminais
+dependencies:
+  - name: common-lib
+    version: 0.1.0
+    repository: "file://../common-lib"
