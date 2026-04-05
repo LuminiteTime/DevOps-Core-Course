@@ -16,6 +16,30 @@ env:
 
 podAnnotations: {}
 
+serviceAccount:
+  create: true
+  name: ""
+
+secret:
+  enabled: true
+  name: ""
+  data:
+    username: helm-user
+    password: helm-pass-123
+
+vault:
+  enabled: true
+  role: devops-info-role
+  secretPath: secret/data/devops-info/config
+  injectFile: config.env
+  template: |
+    {{- with secret "secret/data/devops-info/config" -}}
+    APP_USERNAME={{ .Data.data.username }}
+    APP_PASSWORD={{ .Data.data.password }}
+    APP_TOKEN={{ .Data.data.api_token }}
+    {{- end -}}
+  command: chmod 0444 /vault/secrets/config.env
+
 securityContext:
   seccompProfile:
     type: RuntimeDefault
