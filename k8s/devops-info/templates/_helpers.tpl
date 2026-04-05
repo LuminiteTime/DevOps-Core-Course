@@ -29,6 +29,38 @@ Chart label.
 {{- end }}
 
 {{/*
+Service account name.
+*/}}
+{{- define "devops-info.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "devops-info.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Kubernetes Secret name.
+*/}}
+{{- define "devops-info.secretName" -}}
+{{- default (printf "%s-secret" (include "devops-info.fullname" .)) .Values.secret.name }}
+{{- end }}
+
+{{/*
+Common static environment variables (bonus DRY template).
+*/}}
+{{- define "devops-info.envVars" -}}
+- name: APP_NAME
+  value: {{ .Values.env.APP_NAME | quote }}
+- name: APP_DESCRIPTION
+  value: {{ .Values.env.APP_DESCRIPTION | quote }}
+- name: APP_VERSION
+  value: {{ .Values.env.APP_VERSION | quote }}
+- name: APP_VARIANT
+  value: {{ .Values.env.APP_VARIANT | quote }}
+{{- end }}
+
+{{/*
 Common labels — delegates to the library chart.
 */}}
 {{- define "devops-info.labels" -}}
