@@ -15,8 +15,11 @@ spec:
       {{- include "devops-info.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- if or .Values.vault.enabled .Values.podAnnotations }}
+      {{- if or .Values.vault.enabled .Values.podAnnotations .Values.config.enabled .Values.envConfig.enabled }}
       annotations:
+        {{- if or .Values.config.enabled .Values.envConfig.enabled }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
         {{- if .Values.vault.enabled }}
         vault.hashicorp.com/agent-inject: "true"
         vault.hashicorp.com/role: {{ .Values.vault.role | quote }}
@@ -58,8 +61,14 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
           envFrom:
+            {{- if .Values.envConfig.enabled }}
+            - configMapRef:
+                name: {{ include "devops-info.envConfigMapName" . }}
+            {{- end }}
+            {{- if .Values.secret.enabled }}
             - secretRef:
                 name: {{ include "devops-info.secretName" . }}
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:
@@ -68,3 +77,24 @@ spec:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.config.enabled }}
+            - name: config-volume
+              mountPath: {{ .Values.config.mountPath }}
+              readOnly: true
+            {{- end }}
+            {{- if .Values.persistence.enabled }}
+            - name: data-volume
+              mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
+      volumes:
+        {{- if .Values.config.enabled }}
+        - name: config-volume
+          configMap:
+            name: {{ include "devops-info.configMapName" . }}
+        {{- end }}
+        {{- if .Values.persistence.enabled }}
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: {{ include "devops-info.fullname" . }}-data
+        {{- end }}
