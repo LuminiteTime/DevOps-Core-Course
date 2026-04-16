@@ -1,6 +1,6 @@
-{{- if ne .Values.workload.kind "Rollout" }}
-apiVersion: apps/v1
-kind: Deployment
+{{- if eq .Values.workload.kind "Rollout" }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: {{ include "devops-info.fullname" . }}
   labels:
@@ -9,8 +9,6 @@ spec:
   replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   minReadySeconds: {{ .Values.minReadySeconds }}
-  strategy:
-    {{- toYaml .Values.strategy | nindent 4 }}
   selector:
     matchLabels:
       {{- include "devops-info.selectorLabels" . | nindent 6 }}
@@ -98,5 +96,32 @@ spec:
         - name: data-volume
           persistentVolumeClaim:
             claimName: {{ include "devops-info.fullname" . }}-data
-{{- end }}
         {{- end }}
+  strategy:
+    {{- if eq .Values.rollout.strategy.type "blueGreen" }}
+    blueGreen:
+      activeService: {{ include "devops-info.fullname" . }}
+      previewService: {{ include "devops-info.previewServiceName" . }}
+      autoPromotionEnabled: {{ .Values.rollout.strategy.blueGreen.autoPromotionEnabled }}
+    {{- else }}
+    canary:
+      steps:
+        - setWeight: 20
+        - pause: {}
+        {{- if .Values.rollout.analysis.enabled }}
+        - analysis:
+            templates:
+              - templateName: {{ include "devops-info.analysisTemplateName" . }}
+        {{- end }}
+        - setWeight: 40
+        - pause:
+            duration: 30s
+        - setWeight: 60
+        - pause:
+            duration: 30s
+        - setWeight: 80
+        - pause:
+            duration: 30s
+        - setWeight: 100
+    {{- end }}
+{{- end }}

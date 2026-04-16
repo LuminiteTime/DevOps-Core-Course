@@ -58,6 +58,20 @@ ConfigMap names.
 {{- end }}
 
 {{/*
+Preview service name for blue-green strategy.
+*/}}
+{{- define "devops-info.previewServiceName" -}}
+{{- printf "%s-preview" (include "devops-info.fullname" .) }}
+{{- end }}
+
+{{/*
+AnalysisTemplate name for canary analysis.
+*/}}
+{{- define "devops-info.analysisTemplateName" -}}
+{{- printf "%s-health" (include "devops-info.fullname" .) }}
+{{- end }}
+
+{{/*
 Common static environment variables (bonus DRY template).
 */}}
 {{- define "devops-info.envVars" -}}
