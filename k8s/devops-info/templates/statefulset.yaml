@@ -37,6 +37,27 @@ spec:
       serviceAccountName: {{ include "devops-info.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.securityContext | nindent 8 }}
+      {{- if .Values.initContainers.enabled }}
+      initContainers:
+        - name: wait-for-service
+          image: {{ .Values.initContainers.image | quote }}
+          command:
+            - sh
+            - -c
+            - until nslookup {{ .Values.initContainers.waitForService | quote }}; do sleep 2; done
+          volumeMounts:
+            - name: init-workdir
+              mountPath: /work-dir
+        - name: init-download
+          image: {{ .Values.initContainers.image | quote }}
+          command:
+            - sh
+            - -c
+            - wget -O /work-dir/index.html {{ .Values.initContainers.downloadUrl | quote }}
+          volumeMounts:
+            - name: init-workdir
+              mountPath: /work-dir
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -86,11 +107,19 @@ spec:
             - name: data-volume
               mountPath: {{ .Values.persistence.mountPath }}
             {{- end }}
+            {{- if .Values.initContainers.enabled }}
+            - name: init-workdir
+              mountPath: {{ .Values.initContainers.sharedMountPath }}
+            {{- end }}
       volumes:
         {{- if .Values.config.enabled }}
         - name: config-volume
           configMap:
             name: {{ include "devops-info.configMapName" . }}
+        {{- end }}
+        {{- if .Values.initContainers.enabled }}
+        - name: init-workdir
+          emptyDir: {}
         {{- end }}
   volumeClaimTemplates:
     {{- if .Values.persistence.enabled }}

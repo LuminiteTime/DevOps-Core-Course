@@ -136,3 +136,16 @@ statefulset:
   updateStrategy:
     type: RollingUpdate
     partition: null
+
+initContainers:
+  enabled: false
+  image: busybox:1.36
+  waitForService: kubernetes.default.svc.cluster.local
+  downloadUrl: https://example.com
+  sharedMountPath: /init-data
+
+serviceMonitor:
+  enabled: false
+  releaseLabel: monitoring
+  path: /metrics
+  interval: 15s
