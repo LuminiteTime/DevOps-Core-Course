@@ -1,7 +1,7 @@
 replicaCount: 3
 
 workload:
-  kind: Rollout
+  kind: StatefulSet
 
 image:
   repository: devops-info-service-python
@@ -76,7 +76,7 @@ containerSecurityContext:
       - ALL
 
 service:
-  type: NodePort
+  type: ClusterIP
   port: 80
   targetPort: 8080
   nodePort: 30080
@@ -127,6 +127,12 @@ readinessProbe:
 
 persistence:
   enabled: true
+  accessMode: ReadWriteOnce
   size: 100Mi
   storageClass: ""
   mountPath: /data
+
+statefulset:
+  updateStrategy:
+    type: RollingUpdate
+    partition: null

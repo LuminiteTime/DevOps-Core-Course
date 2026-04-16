@@ -65,6 +65,13 @@ Preview service name for blue-green strategy.
 {{- end }}
 
 {{/*
+Headless service name for StatefulSet networking.
+*/}}
+{{- define "devops-info.headlessServiceName" -}}
+{{- printf "%s-headless" (include "devops-info.fullname" .) }}
+{{- end }}
+
+{{/*
 AnalysisTemplate name for canary analysis.
 */}}
 {{- define "devops-info.analysisTemplateName" -}}
