@@ -47,6 +47,17 @@ Kubernetes Secret name.
 {{- end }}
 
 {{/*
+ConfigMap names.
+*/}}
+{{- define "devops-info.configMapName" -}}
+{{- printf "%s-config" (include "devops-info.fullname" .) }}
+{{- end }}
+
+{{- define "devops-info.envConfigMapName" -}}
+{{- printf "%s-env" (include "devops-info.fullname" .) }}
+{{- end }}
+
+{{/*
 Common static environment variables (bonus DRY template).
 */}}
 {{- define "devops-info.envVars" -}}

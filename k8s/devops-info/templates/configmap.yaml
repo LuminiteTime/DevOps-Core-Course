@@ -1,0 +1,28 @@
+{{- if .Values.config.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "devops-info.configMapName" . }}
+  labels:
+    {{- include "devops-info.labels" . | nindent 4 }}
+data:
+  {{ .Values.config.fileName }}: |-
+{{ tpl (.Files.Get (printf "files/%s" .Values.config.fileName)) . | indent 4 }}
+{{- end }}
+{{- if and .Values.config.enabled .Values.envConfig.enabled }}
+---
+{{- end }}
+{{- if .Values.envConfig.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "devops-info.envConfigMapName" . }}
+  labels:
+    {{- include "devops-info.labels" . | nindent 4 }}
+data:
+  APP_ENV: {{ .Values.envConfig.APP_ENV | quote }}
+  LOG_LEVEL: {{ .Values.envConfig.LOG_LEVEL | quote }}
+  FEATURE_VISITS_COUNTER: {{ .Values.envConfig.FEATURE_VISITS_COUNTER | quote }}
+  APP_CONFIG_PATH: {{ .Values.envConfig.APP_CONFIG_PATH | quote }}
+  VISITS_FILE_PATH: {{ .Values.envConfig.VISITS_FILE_PATH | quote }}
+{{- end }}
