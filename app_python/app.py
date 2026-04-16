@@ -10,8 +10,10 @@ import logging
 import os
 import platform
 import socket
+import threading
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List
 
 from fastapi import FastAPI, Request, Response
@@ -40,8 +42,11 @@ APP_DESCRIPTION: str = os.getenv(
 )
 APP_FRAMEWORK: str = os.getenv("APP_FRAMEWORK", "FastAPI")
 APP_VARIANT: str = os.getenv("APP_VARIANT", "default")
+VISITS_FILE_PATH: Path = Path(
+    os.getenv("VISITS_FILE_PATH", "./data/visits")
+).expanduser()
 
-KNOWN_ENDPOINTS: set[str] = {"/", "/health", "/metrics"}
+KNOWN_ENDPOINTS: set[str] = {"/", "/health", "/metrics", "/visits"}
 
 HTTP_REQUESTS_TOTAL = Counter(
     "http_requests_total",
@@ -117,6 +122,7 @@ logger = _setup_logging()
 
 # Application start time
 START_TIME: datetime = datetime.now(timezone.utc)
+VISITS_LOCK = threading.Lock()
 
 
 def get_system_info() -> Dict[str, Any]:
@@ -160,6 +166,39 @@ def get_runtime_info() -> Dict[str, Any]:
     }
 
 
+def read_visit_count() -> int:
+    """Read the persisted visit count from disk."""
+
+    try:
+        return int(VISITS_FILE_PATH.read_text(encoding="utf-8").strip())
+    except FileNotFoundError:
+        return 0
+    except ValueError:
+        logger.warning(
+            "Visits counter file %s is invalid, resetting to 0",
+            VISITS_FILE_PATH,
+        )
+        return 0
+
+
+def write_visit_count(count: int) -> None:
+    """Persist the current visit count using an atomic replace."""
+
+    VISITS_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = VISITS_FILE_PATH.with_name(f"{VISITS_FILE_PATH.name}.tmp")
+    temp_path.write_text(str(count), encoding="utf-8")
+    temp_path.replace(VISITS_FILE_PATH)
+
+
+def increment_visit_count() -> int:
+    """Increment and persist the visit count safely within this process."""
+
+    with VISITS_LOCK:
+        count = read_visit_count() + 1
+        write_visit_count(count)
+        return count
+
+
 def get_request_info(request: Request) -> Dict[str, Any]:
     """Extract client and request metadata from the incoming HTTP request."""
 
@@ -191,6 +230,11 @@ def get_endpoints() -> List[Dict[str, str]]:
             "path": "/metrics",
             "method": "GET",
             "description": "Prometheus metrics",
+        },
+        {
+            "path": "/visits",
+            "method": "GET",
+            "description": "Current persisted visits counter",
         },
     ]
 
@@ -314,6 +358,7 @@ async def index(request: Request) -> Dict[str, Any]:
     """Main endpoint returning service information."""
 
     DEVOPS_INFO_ENDPOINT_CALLS.labels("/").inc()
+    increment_visit_count()
     with DEVOPS_INFO_SYSTEM_COLLECTION_SECONDS.time():
         system_info = get_system_info()
 
@@ -352,6 +397,15 @@ async def metrics() -> Response:
 
     DEVOPS_INFO_ENDPOINT_CALLS.labels("/metrics").inc()
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+@app.get("/visits")
+async def visits() -> Dict[str, int]:
+    """Return the current persisted visit count."""
+
+    DEVOPS_INFO_ENDPOINT_CALLS.labels("/visits").inc()
+    with VISITS_LOCK:
+        return {"visits": read_visit_count()}
 
 
 def main() -> None:
