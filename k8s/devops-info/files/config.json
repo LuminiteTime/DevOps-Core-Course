@@ -1,0 +1,16 @@
+{
+  "application": {
+    "name": "{{ .Values.env.APP_NAME }}",
+    "environment": "{{ .Values.config.environment }}",
+    "variant": "{{ .Values.env.APP_VARIANT }}"
+  },
+  "features": {
+    "visitsCounter": {{ .Values.config.features.visitsCounter }},
+    "metrics": {{ .Values.config.features.metrics }},
+    "hotReloadStrategy": {{ .Values.config.features.hotReloadStrategy | quote }}
+  },
+  "settings": {
+    "visitsFile": {{ .Values.envConfig.VISITS_FILE_PATH | quote }},
+    "logLevel": {{ .Values.envConfig.LOG_LEVEL | quote }}
+  }
+}

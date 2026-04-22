@@ -47,6 +47,38 @@ Kubernetes Secret name.
 {{- end }}
 
 {{/*
+ConfigMap names.
+*/}}
+{{- define "devops-info.configMapName" -}}
+{{- printf "%s-config" (include "devops-info.fullname" .) }}
+{{- end }}
+
+{{- define "devops-info.envConfigMapName" -}}
+{{- printf "%s-env" (include "devops-info.fullname" .) }}
+{{- end }}
+
+{{/*
+Preview service name for blue-green strategy.
+*/}}
+{{- define "devops-info.previewServiceName" -}}
+{{- printf "%s-preview" (include "devops-info.fullname" .) }}
+{{- end }}
+
+{{/*
+Headless service name for StatefulSet networking.
+*/}}
+{{- define "devops-info.headlessServiceName" -}}
+{{- printf "%s-headless" (include "devops-info.fullname" .) }}
+{{- end }}
+
+{{/*
+AnalysisTemplate name for canary analysis.
+*/}}
+{{- define "devops-info.analysisTemplateName" -}}
+{{- printf "%s-health" (include "devops-info.fullname" .) }}
+{{- end }}
+
+{{/*
 Common static environment variables (bonus DRY template).
 */}}
 {{- define "devops-info.envVars" -}}

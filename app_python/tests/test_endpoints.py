@@ -1,5 +1,9 @@
-import re
+from __future__ import annotations
 
+import re
+from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
 from app_python import app as app_module
@@ -7,6 +11,11 @@ from app_python.app import app
 
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def isolated_visits_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(app_module, "VISITS_FILE_PATH", tmp_path / "visits")
 
 
 def test_get_root_returns_expected_structure() -> None:
@@ -40,7 +49,7 @@ def test_get_root_returns_expected_structure() -> None:
     endpoints = data["endpoints"]
     assert isinstance(endpoints, list) and endpoints
     paths = {e["path"] for e in endpoints}
-    assert paths == {"/", "/health", "/metrics"}
+    assert paths == {"/", "/health", "/metrics", "/visits"}
 
 
 def test_get_health_returns_expected_structure() -> None:
@@ -83,6 +92,32 @@ def test_metrics_endpoint_exposes_prometheus_metrics() -> None:
         r'http_requests_total\{[^}]*endpoint="/health"[^}]*method="GET"[^}]*status_code="200"[^}]*\}',
         body,
     )
+
+
+def test_root_endpoint_increments_visits_counter() -> None:
+    first = client.get("/")
+    second = client.get("/")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+
+    visits = client.get("/visits")
+    assert visits.status_code == 200
+    assert visits.json() == {"visits": 2}
+
+
+def test_visits_endpoint_reads_existing_counter_from_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    visits_file = tmp_path / "visits"
+    visits_file.write_text("41", encoding="utf-8")
+    monkeypatch.setattr(app_module, "VISITS_FILE_PATH", visits_file)
+
+    res = client.get("/visits")
+
+    assert res.status_code == 200
+    assert res.json() == {"visits": 41}
 
 
 def test_main_runs_uvicorn_with_expected_options(monkeypatch) -> None:

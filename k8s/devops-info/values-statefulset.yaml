@@ -1,0 +1,23 @@
+replicaCount: 3
+
+workload:
+  kind: StatefulSet
+
+image:
+  tag: "lab12"
+
+env:
+  APP_NAME: devops-info-service
+  APP_DESCRIPTION: StatefulSet release
+  APP_VERSION: 1.0.0-stateful
+  APP_VARIANT: statefulset
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+statefulset:
+  updateStrategy:
+    type: RollingUpdate
+    partition: null
