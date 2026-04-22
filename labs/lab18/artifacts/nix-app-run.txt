@@ -1,0 +1,30 @@
+=== /health ===
+HTTP/1.1 200 OK
+date: Wed, 22 Apr 2026 09:08:15 GMT
+server: uvicorn
+content-length: 86
+content-type: application/json
+connection: close
+
+{"status":"healthy","timestamp":"2026-04-22T09:08:15.847122+00:00","uptime_seconds":3}
+=== /visits ===
+HTTP/1.1 200 OK
+date: Wed, 22 Apr 2026 09:08:15 GMT
+server: uvicorn
+content-length: 12
+content-type: application/json
+connection: close
+
+{"visits":0}
+---log---
+{"timestamp": "2026-04-22T09:08:12.020587+00:00", "level": "INFO", "name": "devops-info-service", "message": "Starting DevOps Info Service on 0.0.0.0:5000 (debug=False)", "service": "devops-info-service"}
+{"timestamp": "2026-04-22T09:08:12.028950+00:00", "level": "INFO", "name": "uvicorn.error", "message": "Started server process [1055]", "color_message": "Started server process [\u001b[36m%d\u001b[0m]", "service": "devops-info-service"}
+{"timestamp": "2026-04-22T09:08:12.028991+00:00", "level": "INFO", "name": "uvicorn.error", "message": "Waiting for application startup.", "service": "devops-info-service"}
+{"timestamp": "2026-04-22T09:08:12.029073+00:00", "level": "INFO", "name": "uvicorn.error", "message": "Application startup complete.", "service": "devops-info-service"}
+{"timestamp": "2026-04-22T09:08:12.029954+00:00", "level": "INFO", "name": "uvicorn.error", "message": "Uvicorn running on http://0.0.0.0:5000 (Press CTRL+C to quit)", "color_message": "Uvicorn running on \u001b[1m%s://%s:%d\u001b[0m (Press CTRL+C to quit)", "service": "devops-info-service"}
+{"timestamp": "2026-04-22T09:08:15.847798+00:00", "level": "INFO", "name": "devops-info-service", "message": "GET /health 200", "method": "GET", "path": "/health", "status_code": 200, "client_ip": "127.0.0.1", "duration_ms": 0.95, "service": "devops-info-service"}
+{"timestamp": "2026-04-22T09:08:15.852101+00:00", "level": "INFO", "name": "devops-info-service", "message": "GET /visits 200", "method": "GET", "path": "/visits", "status_code": 200, "client_ip": "127.0.0.1", "duration_ms": 1.07, "service": "devops-info-service"}
+{"timestamp": "2026-04-22T09:08:15.886507+00:00", "level": "INFO", "name": "uvicorn.error", "message": "Shutting down", "service": "devops-info-service"}
+{"timestamp": "2026-04-22T09:08:15.995911+00:00", "level": "INFO", "name": "uvicorn.error", "message": "Waiting for application shutdown.", "service": "devops-info-service"}
+{"timestamp": "2026-04-22T09:08:15.996194+00:00", "level": "INFO", "name": "uvicorn.error", "message": "Application shutdown complete.", "service": "devops-info-service"}
+{"timestamp": "2026-04-22T09:08:15.996315+00:00", "level": "INFO", "name": "uvicorn.error", "message": "Finished server process [1055]", "color_message": "Finished server process [\u001b[36m%d\u001b[0m]", "service": "devops-info-service"}
