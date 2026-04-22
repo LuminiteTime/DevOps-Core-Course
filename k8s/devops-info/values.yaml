@@ -1,8 +1,11 @@
 replicaCount: 3
 
+workload:
+  kind: Rollout
+
 image:
-  repository: luminitetime/devops-info-service-python
-  tag: "lab09"
+  repository: devops-info-service-python
+  tag: "lab12"
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -10,9 +13,27 @@ fullnameOverride: ""
 
 env:
   APP_NAME: devops-info-service
-  APP_DESCRIPTION: Helm-managed deployment
-  APP_VERSION: 1.0.0-helm
+  APP_DESCRIPTION: Helm-managed deployment via ArgoCD
+  APP_VERSION: 1.0.0-argocd
   APP_VARIANT: primary
+
+config:
+  enabled: true
+  fileName: config.json
+  mountPath: /config
+  environment: dev
+  features:
+    visitsCounter: true
+    metrics: true
+    hotReloadStrategy: checksum-rollout
+
+envConfig:
+  enabled: true
+  APP_ENV: dev
+  LOG_LEVEL: INFO
+  FEATURE_VISITS_COUNTER: "true"
+  APP_CONFIG_PATH: /config/config.json
+  VISITS_FILE_PATH: /data/visits
 
 podAnnotations: {}
 
@@ -46,6 +67,7 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 100
   runAsGroup: 101
+  fsGroup: 101
 
 containerSecurityContext:
   allowPrivilegeEscalation: false
@@ -73,6 +95,15 @@ strategy:
     maxSurge: 1
     maxUnavailable: 0
 
+rollout:
+  strategy:
+    type: canary
+    blueGreen:
+      autoPromotionEnabled: false
+  analysis:
+    enabled: false
+    path: /health
+
 revisionHistoryLimit: 5
 minReadySeconds: 5
 
@@ -93,3 +124,9 @@ readinessProbe:
   periodSeconds: 5
   timeoutSeconds: 2
   failureThreshold: 3
+
+persistence:
+  enabled: true
+  size: 100Mi
+  storageClass: ""
+  mountPath: /data

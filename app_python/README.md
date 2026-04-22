@@ -11,6 +11,7 @@ This service exposes a small HTTP API that reports information about the running
 The API provides:
 - `GET /` – service, system, runtime, and request metadata
 - `GET /health` – simple health check with uptime info
+- `GET /visits` – current persisted visits counter
 
 ## Prerequisites
 
@@ -47,6 +48,9 @@ PORT=8080 python app.py
 
 # Run on 127.0.0.1:3000 with debug reload
 HOST=127.0.0.1 PORT=3000 DEBUG=true python app.py
+
+# Persist visits to a local file while running outside Docker
+VISITS_FILE_PATH=./data/visits python app.py
 ```
 
 After start, you can test the endpoints with curl (default app config used in commands):
@@ -54,6 +58,7 @@ After start, you can test the endpoints with curl (default app config used in co
 ```bash
 curl http://localhost:8080/
 curl http://localhost:8080/health
+curl http://localhost:8080/visits
 ```
 
 ## Docker
@@ -76,7 +81,27 @@ Test endpoints:
 ```bash
 curl http://localhost:<host-port>/
 curl http://localhost:<host-port>/health
+curl http://localhost:<host-port>/visits
 ```
+
+### Docker Compose With Persistent Visits
+
+`app_python/docker-compose.yml` mounts `./data` into the container and points the app to `/data/visits`:
+
+```bash
+cd app_python
+docker compose up -d --build
+curl http://localhost:8080/
+curl http://localhost:8080/
+curl http://localhost:8080/visits
+cat ./data/visits
+
+docker compose restart
+curl http://localhost:8080/visits
+docker compose down
+```
+
+The visits counter is incremented on every `GET /` request and survives container restarts as long as the mounted `./data` directory is kept.
 
 ### Pull from Docker Hub
 
@@ -115,6 +140,10 @@ pytest
     - `timestamp` – current UTC timestamp in ISO 8601 format
     - `uptime_seconds` – number of seconds the process has been running
 
+- `GET /visits`
+  - Returns the persisted visit counter:
+    - `visits` – integer count stored in the visits file
+
 ## Configuration
 
 The application is configured via environment variables read in [app_python/app.py](app_python/app.py):
@@ -124,5 +153,6 @@ The application is configured via environment variables read in [app_python/app.
 | `HOST`   | `0.0.0.0`  | Address app binds to                  |
 | `PORT`   | `8080`     | TCP port app listens on               |
 | `DEBUG`  | `False`    | When `true`, enables app reload       |
+| `VISITS_FILE_PATH` | `./data/visits` | File used to persist root endpoint visit count |
 
 All variables are optional. If they are not set, the defaults above are used.
