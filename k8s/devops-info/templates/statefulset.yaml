@@ -1,0 +1,140 @@
+{{- if eq .Values.workload.kind "StatefulSet" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "devops-info.fullname" . }}
+  labels:
+    {{- include "devops-info.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "devops-info.headlessServiceName" . }}
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "devops-info.selectorLabels" . | nindent 6 }}
+  updateStrategy:
+    type: {{ .Values.statefulset.updateStrategy.type }}
+    {{- if and (eq .Values.statefulset.updateStrategy.type "RollingUpdate") (ne (toString .Values.statefulset.updateStrategy.partition) "") }}
+    rollingUpdate:
+      partition: {{ .Values.statefulset.updateStrategy.partition }}
+    {{- end }}
+  template:
+    metadata:
+      {{- if or .Values.vault.enabled .Values.podAnnotations .Values.config.enabled .Values.envConfig.enabled }}
+      annotations:
+        {{- if or .Values.config.enabled .Values.envConfig.enabled }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if or .Values.vault.enabled .Values.podAnnotations }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+      labels:
+        {{- include "devops-info.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "devops-info.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      {{- if .Values.initContainers.enabled }}
+      initContainers:
+        - name: wait-for-service
+          image: {{ .Values.initContainers.image | quote }}
+          command:
+            - sh
+            - -c
+            - until nslookup {{ .Values.initContainers.waitForService | quote }}; do sleep 2; done
+          volumeMounts:
+            - name: init-workdir
+              mountPath: /work-dir
+        - name: init-download
+          image: {{ .Values.initContainers.image | quote }}
+          command:
+            - sh
+            - -c
+            - wget -O /work-dir/index.html {{ .Values.initContainers.downloadUrl | quote }}
+          volumeMounts:
+            - name: init-workdir
+              mountPath: /work-dir
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- include "devops-info.envVars" . | nindent 12 }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          envFrom:
+            {{- if .Values.envConfig.enabled }}
+            - configMapRef:
+                name: {{ include "devops-info.envConfigMapName" . }}
+            {{- end }}
+            {{- if .Values.secret.enabled }}
+            - secretRef:
+                name: {{ include "devops-info.secretName" . }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.config.enabled }}
+            - name: config-volume
+              mountPath: {{ .Values.config.mountPath }}
+              readOnly: true
+            {{- end }}
+            {{- if .Values.persistence.enabled }}
+            - name: data-volume
+              mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
+            {{- if .Values.initContainers.enabled }}
+            - name: init-workdir
+              mountPath: {{ .Values.initContainers.sharedMountPath }}
+            {{- end }}
+      volumes:
+        {{- if .Values.config.enabled }}
+        - name: config-volume
+          configMap:
+            name: {{ include "devops-info.configMapName" . }}
+        {{- end }}
+        {{- if .Values.initContainers.enabled }}
+        - name: init-workdir
+          emptyDir: {}
+        {{- end }}
+  volumeClaimTemplates:
+    {{- if .Values.persistence.enabled }}
+    - metadata:
+        name: data-volume
+        labels:
+          {{- include "devops-info.labels" . | nindent 10 }}
+      spec:
+        accessModes:
+          - {{ .Values.persistence.accessMode }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+        {{- if .Values.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClass | quote }}
+        {{- end }}
+    {{- end }}
+{{- end }}
