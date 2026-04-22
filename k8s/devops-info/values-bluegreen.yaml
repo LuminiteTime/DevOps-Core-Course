@@ -1,0 +1,27 @@
+replicaCount: 2
+
+workload:
+  kind: Rollout
+
+image:
+  tag: "lab12"
+
+env:
+  APP_NAME: devops-info-service
+  APP_DESCRIPTION: Blue-green rollout release
+  APP_VERSION: 1.0.0-blue
+  APP_VARIANT: bluegreen
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+rollout:
+  strategy:
+    type: blueGreen
+    blueGreen:
+      autoPromotionEnabled: false
+  analysis:
+    enabled: false
+    path: /health

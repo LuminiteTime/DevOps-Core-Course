@@ -1,0 +1,27 @@
+replicaCount: 3
+
+workload:
+  kind: Rollout
+
+image:
+  tag: "lab12"
+
+env:
+  APP_NAME: devops-info-service
+  APP_DESCRIPTION: Canary rollout with failing analysis
+  APP_VERSION: 3.0.0-canary-fail
+  APP_VARIANT: canary-fail
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+rollout:
+  strategy:
+    type: canary
+    blueGreen:
+      autoPromotionEnabled: false
+  analysis:
+    enabled: true
+    path: /does-not-exist

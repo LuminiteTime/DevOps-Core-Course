@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: devops-info-envs
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: dev
+            valueFile: values-dev.yaml
+            releaseName: lab13-dev
+            autoSync: true
+          - env: prod
+            namespace: prod
+            valueFile: values-prod.yaml
+            releaseName: lab13-prod
+            autoSync: false
+  template:
+    metadata:
+      name: 'devops-info-{{ .env }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/LuminiteTime/DevOps-Core-Course.git
+        targetRevision: lab13
+        path: k8s/devops-info
+        helm:
+          releaseName: '{{ .releaseName }}'
+          valueFiles:
+            - '{{ .valueFile }}'
+          parameters:
+            - name: service.type
+              value: ClusterIP
+            - name: service.nodePort
+              value: ""
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ .namespace }}'
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+  templatePatch: |
+    {{- if .autoSync }}
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+    {{- end }}

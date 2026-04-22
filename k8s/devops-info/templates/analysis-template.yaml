@@ -1,0 +1,20 @@
+{{- if and (eq .Values.workload.kind "Rollout") .Values.rollout.analysis.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "devops-info.analysisTemplateName" . }}
+  labels:
+    {{- include "devops-info.labels" . | nindent 4 }}
+spec:
+  metrics:
+    - name: health-check
+      interval: 10s
+      count: 3
+      failureLimit: 1
+      successCondition: result == "healthy"
+      provider:
+        web:
+          url: http://{{ include "devops-info.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local{{ .Values.rollout.analysis.path }}
+          timeoutSeconds: 5
+          jsonPath: "{$.status}"
+{{- end }}
