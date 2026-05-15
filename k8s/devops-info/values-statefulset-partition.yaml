@@ -1,0 +1,23 @@
+replicaCount: 3
+
+workload:
+  kind: StatefulSet
+
+image:
+  tag: "lab12"
+
+env:
+  APP_NAME: devops-info-service
+  APP_DESCRIPTION: StatefulSet rolling update with partition
+  APP_VERSION: 1.1.0-partition
+  APP_VARIANT: statefulset
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+statefulset:
+  updateStrategy:
+    type: RollingUpdate
+    partition: 2

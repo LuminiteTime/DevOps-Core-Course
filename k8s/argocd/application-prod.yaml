@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devops-info-prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/LuminiteTime/DevOps-Core-Course.git
+    targetRevision: lab13
+    path: k8s/devops-info
+    helm:
+      releaseName: lab13-prod
+      valueFiles:
+        - values-prod.yaml
+      parameters:
+        - name: service.type
+          value: ClusterIP
+        - name: service.nodePort
+          value: ""
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: prod
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

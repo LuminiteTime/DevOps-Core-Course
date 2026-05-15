@@ -1,0 +1,13 @@
+services:
+  devops-info:
+    build:
+      context: .
+    container_name: devops-info-python
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8080"
+      VISITS_FILE_PATH: /data/visits
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
